@@ -1,0 +1,78 @@
+state_machine:
+  update_rate_hz: 10.0
+  initial_state: IDLE
+  status_topic: ~/current_state
+
+  inputs:
+    obstacle:
+      topic: /obstacle_detected
+      type: std_msgs/msg/Bool
+      field: data
+
+    traffic_light:
+      topic: /traffic_light
+      type: std_msgs/msg/String
+      field: data
+
+  outputs:
+    behavior_cmd:
+      topic: /behavior_cmd
+      type: std_msgs/msg/String
+      field: data
+
+  states:
+    IDLE:
+      on_enter:
+        - output: behavior_cmd
+          value: STOP
+      transitions:
+        - when:
+            input: traffic_light
+            op: "=="
+            value: GREEN
+          to: DRIVE
+          actions:
+            - output: behavior_cmd
+              value: DRIVE
+
+    DRIVE:
+      transitions:
+        - when:
+            input: obstacle
+            op: "=="
+            value: true
+          to: AVOID
+          actions:
+            - output: behavior_cmd
+              value: AVOID
+
+        - when:
+            input: traffic_light
+            op: "=="
+            value: RED
+          to: STOP
+          actions:
+            - output: behavior_cmd
+              value: STOP
+
+    AVOID:
+      transitions:
+        - when:
+            input: obstacle
+            op: "=="
+            value: false
+          to: DRIVE
+          actions:
+            - output: behavior_cmd
+              value: DRIVE
+
+    STOP:
+      transitions:
+        - when:
+            input: traffic_light
+            op: "=="
+            value: GREEN
+          to: DRIVE
+          actions:
+            - output: behavior_cmd
+              value: DRIVE
